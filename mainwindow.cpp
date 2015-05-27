@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     blockSize = 2 ;
     mappingType = ui->mappingType->currentText().toInt()+3 ;
     QStringList a  ;
-    a << "0000000000" <<"0000000000" << "0000000000" <<  "1000000000" << "0000000001" << "0000000010" << "0000000011" ;
+    a << "0000000000" <<"0000000000" << "0000000000" <<  "1000000000" << "0000000001" << "0000000010" << "0000000011" << "1111111111" ;
     ui->addressList->addItems(a);
     this->generateData();
 
