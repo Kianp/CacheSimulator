@@ -13,10 +13,10 @@ MainWindow::MainWindow(QWidget *parent) :
     // developement
     memorySize = 10 ;
     cacheSize = 5 ;
-    blockSize = 4 ;
+    blockSize = 2 ;
     mappingType = ui->mappingType->currentText().toInt()+3 ;
     QStringList a  ;
-    a << "0000000000" << "1000000000" << "0000000001" << "0000000010" << "0000000011" ;
+    a << "0000000000" <<"0000000000" << "0000000000" <<  "1000000000" << "0000000001" << "0000000010" << "0000000011" ;
     ui->addressList->addItems(a);
     this->generateData();
 
@@ -85,28 +85,38 @@ void MainWindow::selectFirstAddressFromMM()
         QString address = ui->addressList->takeItem(0)->text() ;
         QString index= address.right(cacheSize) ;
         QString tag = address.left(memorySize-cacheSize) ;
+        QString word = index.right(log2(blockSize)) ;
+        index = index.left(index.length()-log2(blockSize)) ;
         int TAG = tag.toInt(false ,2 ) ;
         int INDEX = index.toInt(false , 2) ;
         int ADDRESS = address.toInt(false , 2 ) ;
+        int WORD = word.toInt(false , 2) ;
+		QStringList datas;
+		for (int w = 0; w < blockSize; w++) {
+			datas << ui->mainMem->item(address.toInt(false, 2) + w, 0)->text();
+		}
+        qDebug() << datas;
         QString data = ui->mainMem->item(address.toInt(false , 2) , 0 )->text() ;
 
-        qDebug() << "tag : " << tag << " , " << TAG << " INDEX : " << index << " , " << INDEX  ;
+        qDebug() << "tag : " << tag << " , " << TAG << " INDEX : " << index << " , " << INDEX << " Word: " << WORD  ;
         qDebug() << "address : " << address << " , DATA : " << data ;
 
         ui->mainMem->selectRow(ADDRESS);
-        ui->cache->selectRow(INDEX);
+        ui->cache->selectRow((INDEX*blockSize));
 
 
 
         bool success = false ;
-        for (int i = 0  ; i < 2*mappingType ; i+= 2 ) {
-            if ( ui->cache->item(INDEX , i )->text() == tag ){
+        for (  int i = 0  ; i < 2*mappingType ; i+= 2 ){
+            if ( ui->cache->item((INDEX*blockSize) + WORD , i )->text() == tag ){
                 success = true ;
+                break ;
             }
             else {
                  // :|
             }
         }
+
 
         if ( success ) {
             qDebug() << "HIT" ;
@@ -116,23 +126,30 @@ void MainWindow::selectFirstAddressFromMM()
             qDebug() << "MISS" ;
             miss ++ ;
             bool EMPTY = false ;
-            for ( int i=0 ; i < mappingType*2 ; i = i + 2  ) {
-                if ( ui->cache->item(INDEX , i )->text() == "null" ) {
-                    ui->cache->setItem(INDEX , i , new QTableWidgetItem(tag));
-                    ui->cache->setItem(INDEX , i+1 , new QTableWidgetItem(data));
+            for ( int i=0 ; i < mappingType*2 ; i += 2) {
+                if ( ui->cache->item((INDEX*blockSize)+WORD , i )->text() == "null" ) {
+                    for (int w = 0; w < blockSize ; w++){
+                        ui->cache->setItem((INDEX*blockSize) + w, i, new QTableWidgetItem(tag));
+                        ui->cache->setItem((INDEX*blockSize) + w, i + 1, new QTableWidgetItem(datas.at(w)));
+					}
+ 
                     EMPTY = true ;
                     break ;
                 }
             }
+
+
             if ( !EMPTY ){
                 qDebug() << "LIFO" ;
-                ui->cache->setItem(INDEX , (2*mappingType)-2 , new QTableWidgetItem(tag));
-                ui->cache->setItem(INDEX , (2*mappingType)-1 , new QTableWidgetItem(data));
+                for ( int w = 0 ; w <  blockSize ; w ++ ) {
+                    ui->cache->setItem((INDEX*blockSize)+w , (2*mappingType)-2 , new QTableWidgetItem(tag));
+                    ui->cache->setItem((INDEX*blockSize)+w , (2*mappingType)-1 , new QTableWidgetItem(datas.at(w)));
+                }
             }
         }
         ui->HIT->display(hit);
         ui->MISS->display(miss);
-        ui->MissRate->setText(QString::number((float)(hit / miss))) ;
+        ui->MissRate->setText(QString::number((float)(hit / ( hit + miss ) ) )) ;
     }
 }
 

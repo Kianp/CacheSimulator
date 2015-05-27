@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDebug>
 #include "qmath.h"
+#include <cmath>
 
 namespace Ui {
 class MainWindow;
