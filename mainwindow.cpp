@@ -11,15 +11,15 @@ MainWindow::MainWindow(QWidget *parent) :
     dataWidth = 10 ;
 
     // developement
-    memorySize = 10 ;
-    cacheSize = 5 ;
-    blockSize = 2 ;
-    mappingType = ui->mappingType->currentText().toInt()+3 ;
+//    memorySize = 10 ;
+//    cacheSize = 5 ;
+//    blockSize = 4 ;
+//    mappingType = ui->mappingType->currentText().toInt()+3 ;
     QStringList a  ;
-    a << "0000000000" <<"0000000000" << "0000000000" <<  "1000000000" << "0000000001" << "0000000010" << "0000000011" << "1111111111" ;
+    for ( int i = 0 ; i < 100000 ; i ++ ) {
+        a << this->randomBinaryNumberGenerator(dataWidth) ;
+    }
     ui->addressList->addItems(a);
-    this->generateData();
-
 }
 
 QString MainWindow::randomBinaryNumberGenerator(int width)
@@ -37,14 +37,21 @@ QString MainWindow::randomBinaryNumberGenerator(int width)
 void MainWindow::generateData()
 {
     // development
-//    blockSize = ui->blockSize->text().toInt() ;
-//    memorySize = ui->memSize->text().toInt() ;
-//    cacheSize = ui->cacheSize->text().toInt() ;
+    blockSize = ui->blockSize->value();
+    memorySize = ui->memSize->text().toInt() ;
+    cacheSize = ui->cacheSize->text().toInt() ;
     mappingType = ui->mappingType->currentText().toInt() ;
 
     ui->mainMem->clear();
     ui->mainMem->setRowCount(0);
     ui->mainMem->setColumnCount(0);
+
+    QString _CustomStyle = QString(
+          "QTableWidget::item::nth-child(2n+0) {background-color: rgba(162, 186, 60);}") ;
+    ui->mainMem->setStyleSheet(_CustomStyle);
+//    for ( int r = 0 ; r < ui->mainMem->rowCount() ; r ++ ) {
+//        if u
+//    }
 
     ui->mainMem->insertColumn(0);
     int memRowCount = qPow(2 , memorySize) ;
@@ -92,14 +99,22 @@ void MainWindow::selectFirstAddressFromMM()
         int ADDRESS = address.toInt(false , 2 ) ;
         int WORD = word.toInt(false , 2) ;
 		QStringList datas;
-		for (int w = 0; w < blockSize; w++) {
-			datas << ui->mainMem->item(address.toInt(false, 2) + w, 0)->text();
-		}
-        qDebug() << datas;
+        if ( blockSize == 1 ) {
+            datas << ui->mainMem->item(ADDRESS , 0 )->text() ;
+        }
+        else {
+            int baseADDRESS = ADDRESS ;
+            while ( baseADDRESS % blockSize != 0 ) {
+                baseADDRESS -=1 ;
+            }
+            for (int w = 0; w < blockSize; w++) {
+                datas << ui->mainMem->item(baseADDRESS + w, 0)->text();
+            }
+        }
+        qDebug() << datas ;
+
         QString data = ui->mainMem->item(address.toInt(false , 2) , 0 )->text() ;
 
-        qDebug() << "tag : " << tag << " , " << TAG << " INDEX : " << index << " , " << INDEX << " Word: " << WORD  ;
-        qDebug() << "address : " << address << " , DATA : " << data ;
 
         ui->mainMem->selectRow(ADDRESS);
         ui->cache->selectRow((INDEX*blockSize));
@@ -149,7 +164,8 @@ void MainWindow::selectFirstAddressFromMM()
         }
         ui->HIT->display(hit);
         ui->MISS->display(miss);
-        ui->MissRate->setText(QString::number((float)(hit / ( hit + miss ) ) )) ;
+        qDebug() << ((float)hit / (float)( hit + miss ) )  ;
+        ui->MissRate->setText(QString::number(((float)hit / (float)( hit + miss ) ) )) ;
     }
 }
 
